@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play - Space Project Game</title>
+    <style>
+        body{margin:0;overflow:hidden;background:#000;height:100vh;font-family:'Segoe UI',Arial,sans-serif;color:#fff;display:flex}
+        #pageWrapper{flex:1;display:flex;opacity:0;transition:opacity .6s ease}
+        #pageWrapper.active{opacity:1}
+        .sidebar{width:340px;background:rgba(15,15,35,.95);border-right:1px solid rgba(0,204,255,.3);padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem;z-index:20;backdrop-filter:blur(12px);box-shadow:0 0 40px rgba(0,0,0,.6);overflow-y:auto}
+        .sidebar h2{margin:0 0 1rem;font-size:1.6rem;color:#00ccff;text-shadow:0 0 15px rgba(0,204,255,.5)}
+        .category{margin-bottom:1.8rem}
+        .category h3{margin:0 0 .9rem;font-size:1.25rem;color:#00aaff;font-weight:600}
+        .tool-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:1.1rem;transition:all .3s ease;cursor:grab}
+        .tool-card:hover{border-color:#00ccff;box-shadow:0 8px 25px rgba(0,204,255,.25)}
+        .tool-header{display:flex;align-items:center;gap:.8rem;padding-bottom:.8rem;border-bottom:1px dashed rgba(255,255,255,.1);margin-bottom:.8rem;user-select:none}
+        .tool-header:active{cursor:grabbing}
+        .tool-icon{width:32px;height:32px;background:#00ccff;mask-size:contain;mask-repeat:no-repeat;mask-position:center}
+        .tool-name{font-weight:600;font-size:1.1rem}
+        .game-container{flex:1;position:relative;background:#000;overflow:hidden}
+        canvas{display:block;width:100%;height:100%}
+        #gameCanvas,#particles{pointer-events:auto}
+        .controls-panel{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:.8rem 1.2rem;border-radius:16px;display:flex;gap:1rem;align-items:center;font-size:.9rem;z-index:15;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1)}
+        .speed-control,.toggle-group{display:flex;align-items:center;gap:.5rem}
+        .speed-btn,.toggle-btn,.pause-btn{padding:.4rem .8rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:8px;font-size:.8rem;cursor:pointer;transition:.2s}
+        .speed-btn:hover,.toggle-btn:hover,.pause-btn:hover{background:rgba(0,204,255,.3);border-color:#00ccff}
+        .speed-btn.active,.toggle-btn.active,.pause-btn.active{background:#00ccff;color:#000;font-weight:bold}
+        .info-panel{position:absolute;top:20px;right:20px;background:rgba(15,15,35,.95);border:1px solid rgba(0,204,255,.5);border-radius:16px;padding:1rem;min-width:280px;backdrop-filter:blur(12px);box-shadow:0 0 30px rgba(0,204,255,.2);z-index:15;display:none;font-size:.9rem}
+        .info-panel h3{margin:0 0 .8rem;color:#00ccff}
+        .info-row{display:flex;justify-content:space-between;margin:.5rem 0}
+        .info-row input{width:90px;padding:.4rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;color:#fff}
+        .delete-btn,.freeze-btn{margin-top:1rem;width:48%;padding:.6rem;border-radius:8px;cursor:pointer;font-weight:600}
+        .delete-btn{background:rgba(255,50,50,.4);border:1px solid rgba(255,100,100,.6);color:#ff8888}
+        .freeze-btn{background:rgba(50,50,255,.4);border:1px solid rgba(100,100,255,.6);color:#88aaff}
+        .delete-btn:hover{background:rgba(255,50,50,.6)}
+        .freeze-btn:hover{background:rgba(50,50,255,.6)}
+        .help-text{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:.5rem 1rem;border-radius:8px;font-size:.8rem;color:#aaa;z-index:10;white-space:nowrap}
+        .custom-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(15,15,35,.98);border:2px solid #00ccff;border-radius:16px;padding:1.5rem;width:360px;z-index:100;display:none;backdrop-filter:blur(12px);box-shadow:0 0 50px rgba(0,204,255,.4)}
+        .custom-panel h3{margin:0 0 1rem;color:#00ccff;text-align:center}
+        .custom-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem}
+        .custom-row label{color:#ccc;font-size:.9rem}
+        .custom-row input,.custom-row select{padding:.5rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;color:#fff}
+        .custom-btns{display:flex;gap:.8rem;margin-top:1.2rem}
+        .custom-btn{flex:1;padding:.7rem;border-radius:8px;cursor:pointer;font-weight:600}
+        .spawn-btn{background:#00ccff;color:#000}
+        .cancel-btn{background:rgba(100,100,100,.5);color:#ccc;border:1px solid rgba(255,255,255,.3)}
+    </style>
+</head>
+<body>
+
+<div id="pageWrapper">
+    <div class="sidebar">
+        <h2>Spawn Objects</h2>
+
+        <div class="category">
+            <h3>Stars</h3>
+            <div class="tool-card" data-type="star">
+                <div class="tool-header" draggable="true">
+                    <div class="tool-icon" style="mask-image:url('data:image/svg+xml;utf8,<svg viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z%22/></svg>');"></div>
+                    <div class="tool-name">Yellow Star</div>
+                </div>
+            </div>
+            <div class="tool-card" data-type="redgiant">
+                <div class="tool-header" draggable="true">
+                    <div class="tool-icon" style="mask-image:url('data:image/svg+xml;utf8,<svg viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z%22/></svg>');"></div>
+                    <div class="tool-name">Red Giant</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category">
+            <h3>Celestial Objects</h3>
+            <div class="tool-card" data-type="planet">
+                <div class="tool-header" draggable="true">
+                    <div class="tool-icon" style="mask-image:url('data:image/svg+xml;utf8,<svg viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><circle cx=%2212%22 cy=%2212%22 r=%228%22/></svg>');"></div>
+                    <div class="tool-name">Planet</div>
+                </div>
+            </div>
+            <div class="tool-card" data-type="comet">
+                <div class="tool-header" draggable="true">
+                    <div class="tool-icon" style="mask-image:url('data:image/svg+xml;utf8,<svg viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10c1.1 0 2.15-.18 3.14-.5l3.36 3.36 1.41-1.41-3.36-3.36c.32-.99.5-2.04.5-3.14 0-5.52-4.48-10-10-10zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z%22/></svg>');"></div>
+                    <div class="tool-name">Comet</div>
+                </div>
+            </div>
+            <div class="tool-card" data-type="blackhole">
+                <div class="tool-header" draggable="true">
+                    <div class="tool-icon" style="mask-image:url('data:image/svg+xml;utf8,<svg viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22 fill=%22none%22 stroke=%22currentColor%22 stroke-width=%222%22/><circle cx=%2212%22 cy=%2212%22 r=%225%22 fill=%22currentColor%22/></svg>');"></div>
+                    <div class="tool-name">Black Hole</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <canvas id="particles"></canvas>
+
+        <div class="info-panel" id="infoPanel">
+            <h3 id="objName">Object</h3>
+            <div class="info-row"><span>Mass:</span> <input type="number" id="massInput"></div>
+            <div class="info-row"><span>Vel X:</span> <input type="number" step="0.1" id="velXInput"></div>
+            <div class="info-row"><span>Vel Y:</span> <input type="number" step="0.1" id="velYInput"></div>
+            <div class="info-row"><span>Speed:</span> <span id="speedDisplay">0</span></div>
+            <div class="info-row"><span>Distance:</span> <span id="distDisplay">0</span></div>
+            <div style="display:flex;gap:.5rem;">
+                <button class="delete-btn" id="deleteBtn">Delete</button>
+                <button class="freeze-btn" id="freezeBtn">Freeze</button>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="speed-control">
+                <span>Speed:</span>
+                <div class="speed-btn" data-speed="0.25">0.25x</div>
+                <div class="speed-btn active" data-speed="1">1x</div>
+                <div class="speed-btn" data-speed="2">2x</div>
+                <div class="speed-btn" data-speed="5">5x</div>
+            </div>
+            <div class="toggle-group">
+                <div class="toggle-btn active" id="orbitsBtn">Orbits</div>
+                <div class="toggle-btn active" id="trailsBtn">Trails</div>
+                <div class="toggle-btn active" id="soundBtn">Sound</div>
+                <div class="pause-btn" id="pauseBtn">Pause</div>
+            </div>
+        </div>
+
+        <div class="help-text">
+            Drag & Drop to Customize • Space = Pause • Shift+Click = Follow • Del = Delete • R = Reset
+        </div>
+    </div>
+</div>
+
+<div class="custom-panel" id="customPanel">
+    <h3>Customize & Spawn</h3>
+    <div class="custom-row">
+        <label>Mass <input type="number" id="cMass" value="20"></label>
+        <label>Velocity <input type="number" id="cVel" value="0" step="0.1"></label>
+    </div>
+    <div class="custom-row">
+        <label>Color <input type="color" id="cColor" value="#4488ff"></label>
+        <label>Type 
+            <select id="cType">
+                <option value="planet">Planet</option>
+                <option value="comet">Comet</option>
+                <option value="star">Star</option>
+                <option value="redgiant">Red Giant</option>
+                <option value="blackhole">Black Hole</option>
+            </select>
+        </label>
+    </div>
+    <div class="custom-row" id="ringRow">
+        <label><input type="checkbox" id="cHasRings"> Rings</label>
+        <label>Ring Inner <input type="number" id="cRingInner" value="1.5" step="0.1"></label>
+        <label>Ring Outer <input type="number" id="cRingOuter" value="2.5" step="0.1"></label>
+        <label>Ring Color <input type="color" id="cRingColor" value="#cccccc"></label>
+    </div>
+    <div class="custom-btns">
+        <button class="custom-btn spawn-btn" id="spawnCustomBtn">Spawn</button>
+        <button class="custom-btn cancel-btn" id="cancelCustomBtn">Cancel</button>
+    </div>
+</div>
+
+<audio id="sfx-spawn" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwF"></audio>
+<audio id="sfx-collide" src="data:audio/wav;base64,UklGRl4GAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwF"></audio>
+<audio id="sfx-explosion" src="data:audio/wav;base64,UklGRmAGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwF"></audio>
+<audio id="sfx-blackhole" src="data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwF"></audio>
+<audio id="sfx-slingshot" src="data:audio/wav;base64,UklGRlAGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwF"></audio>
+<audio id="sfx-orbit" src="data:audio/wav;base64,UklGRkAGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwF"></audio>
+
+<script>
+    const wrapper = document.getElementById('pageWrapper');
+    setTimeout(() => wrapper.classList.add('active'), 50);
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const pCanvas = document.getElementById('particles');
+    const pCtx = pCanvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+        width = canvas.width = pCanvas.width = canvas.clientWidth;
+        height = canvas.height = pCanvas.height = canvas.clientHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const G = 150;
+    let DT = 0.016;
+    let simSpeed = 1;
+    let paused = false;
+    let showOrbits = true;
+    let showTrails = true;
+    let soundEnabled = true;
+
+    let zoom = 1, targetZoom = 1;
+    let offsetX = 0, offsetY = 0;
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let followTarget = null;
+    let mouse = { x: 0, y: 0 };
+    let spawnPos = null;
+
+    const objects = [];
+    const particles = [];
+    let selected = null;
+    let draggedTool = null;
+
+    const sfx = {
+        spawn: document.getElementById('sfx-spawn'),
+        collide: document.getElementById('sfx-collide'),
+        explosion: document.getElementById('sfx-explosion'),
+        blackhole: document.getElementById('sfx-blackhole'),
+        slingshot: document.getElementById('sfx-slingshot'),
+        orbit: document.getElementById('sfx-orbit')
+    };
+    function play(sound) {
+        if (!soundEnabled) return;
+        const clone = sound.cloneNode();
+        clone.play().catch(() => {});
+    }
+
+    class CelestialBody {
+        constructor(x, y, mass, vx, vy, type, color, rings = null) {
+            this.x = x; this.y = y;
+            this.mass = mass;
+            this.radius = Math.pow(mass, 0.4) * 3;
+            this.vx = vx; this.vy = vy;
+            this.type = type;
+            this.color = color;
+            this.rings = rings;
+            this.trail = [];
+            this.orbit = [];
+            this.id = Date.now() + Math.random();
+            this.frozen = false;
+            this.orbitUpdateTimer = 0;
+            this.cometTail = [];
+        }
+        updateTrail() {
+            if (showTrails && !this.frozen) {
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > 100) this.trail.shift();
+            }
+        }
+        updateCometTail() {
+            if (this.type !== 'comet') return;
+            const speed = Math.hypot(this.vx, this.vy);
+            if (speed > 12) {
+                this.cometTail.push({ x: this.x, y: this.y, age: 0 });
+                if (this.cometTail.length > 40) this.cometTail.shift();
+            }
+            this.cometTail.forEach(p => p.age++);
+            this.cometTail = this.cometTail.filter(p => p.age < 40);
+        }
+        predictOrbit() {
+            if (!showOrbits || this.frozen) return;
+            this.orbitUpdateTimer--;
+            if (this.orbitUpdateTimer > 0) return;
+
+            const orbit = [];
+            let px = this.x, py = this.y, pvx = this.vx, pvy = this.vy;
+            let steps = 0;
+            const maxSteps = 1200;
+
+            for (let i = 0; i < maxSteps; i++) {
+                let ax = 0, ay = 0;
+                for (const obj of objects) {
+                    if (obj === this || obj.frozen) continue;
+                    const dx = obj.x - px;
+                    const dy = obj.y - py;
+                    const distSq = dx * dx + dy * dy + 1;
+                    const force = G * obj.mass / distSq;
+                    const dist = Math.sqrt(distSq);
+                    ax += force * dx / dist;
+                    ay += force * dy / dist;
+                }
+                pvx += ax * DT;
+                pvy += ay * DT;
+                px += pvx * DT;
+                py += pvy * DT;
+                orbit.push({ x: px, y: py });
+                steps++;
+                if (steps > 80 && Math.hypot(px - this.x, py - this.y) < this.radius * 4) break;
+            }
+
+            this.orbit = orbit;
+            this.orbitUpdateTimer = 10;
+        }
+        draw() {
+            const sx = this.x * zoom + offsetX;
+            const sy = this.y * zoom + offsetY;
+            const sr = this.radius * zoom;
+
+            if (this.rings && this.type === 'planet') {
+                const inner = sr * this.rings.inner;
+                const outer = sr * this.rings.outer;
+                const grad = ctx.createRadialGradient(sx, sy, inner, sx, sy, outer);
+                grad.addColorStop(0, this.rings.color + '00');
+                grad.addColorStop(0.3, this.rings.color + '40');
+                grad.addColorStop(0.7, this.rings.color + '40');
+                grad.addColorStop(1, this.rings.color + '00');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(sx, sy, outer, 0, Math.PI * 2);
+                ctx.arc(sx, sy, inner, 0, Math.PI * 2, true);
+                ctx.fill();
+            }
+
+            if (showOrbits && this.orbit.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = this.color + '30';
+                ctx.lineWidth = 1.5;
+                let drawn = 0;
+                const viewRadius = Math.max(width, height) / zoom * 1.8;
+                for (const p of this.orbit) {
+                    const px = p.x * zoom + offsetX;
+                    const py = p.y * zoom + offsetY;
+                    const distFromCenter = Math.hypot(px - width/2, py - height/2);
+                    if (distFromCenter > viewRadius) continue;
+                    if (drawn === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                    drawn++;
+                    if (drawn > 500) break;
+                }
+                if (drawn > 1) ctx.stroke();
+            }
+
+            if (showTrails && this.trail.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = this.color + '70';
+                ctx.lineWidth = 2;
+                this.trail.forEach((p, i) => {
+                    const alpha = i / this.trail.length;
+                    ctx.globalAlpha = alpha * 0.8;
+                    const px = p.x * zoom + offsetX;
+                    const py = p.y * zoom + offsetY;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            if (this.type === 'comet' && this.cometTail.length > 1) {
+                ctx.beginPath();
+                this.cometTail.forEach((p, i) => {
+                    const alpha = (1 - p.age / 40) * 0.8;
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = '#ccffff';
+                    const px = p.x * zoom + offsetX;
+                    const py = p.y * zoom + offsetY;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3 * zoom, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            const grad = ctx.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 2.5);
+            grad.addColorStop(0, this.color);
+            grad.addColorStop(1, this.color + '00');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (this.type === 'blackhole') {
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(sx, sy, sr * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(sx, sy, sr * 1.3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            if (selected === this) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(sx, sy, sr + 12, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            if (this.frozen) {
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.arc(sx, sy, sr + 8, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+    }
+
+    class Particle {
+        constructor(x, y, vx, vy, color, life, size = 2) {
+            this.x = x; this.y = y;
+            this.vx = vx; this.vy = vy;
+            this.color = color;
+            this.life = life;
+            this.maxLife = life;
+            this.size = size;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.08;
+            this.life--;
+        }
+        draw() {
+            const alpha = this.life / this.maxLife;
+            pCtx.globalAlpha = alpha;
+            pCtx.fillStyle = this.color;
+            pCtx.beginPath();
+            pCtx.arc(this.x * zoom + offsetX, this.y * zoom + offsetY, this.size * zoom, 0, Math.PI * 2);
+            pCtx.fill();
+        }
+    }
+
+    function assistOrbit(planet, star) {
+        const dx = star.x - planet.x;
+        const dy = star.y - planet.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < star.radius * 8 || dist > star.radius * 50) return;
+
+        const orbitalSpeed = Math.sqrt(G * star.mass / dist);
+        const tangentX = -dy / dist;
+        const tangentY = dx / dist;
+        planet.vx = tangentX * orbitalSpeed;
+        planet.vy = tangentY * orbitalSpeed;
+        play(sfx.orbit);
+    }
+
+    function spawnObject(x, y, config) {
+        const obj = new CelestialBody(
+            x, y,
+            config.mass,
+            config.vx || 0,
+            config.vy || 0,
+            config.type,
+            config.color,
+            config.rings
+        );
+        objects.push(obj);
+
+        if (config.type === 'planet') {
+            const star = objects.find(o => (o.type === 'star' || o.type === 'redgiant') && o !== obj);
+            if (star) assistOrbit(obj, star);
+        }
+
+        obj.predictOrbit();
+        play(sfx.spawn);
+    }
+
+    const customPanel = document.getElementById('customPanel');
+    const cType = document.getElementById('cType');
+    const ringRow = document.getElementById('ringRow');
+    cType.addEventListener('change', () => {
+        ringRow.style.display = cType.value === 'planet' ? 'grid' : 'none';
+    });
+
+    document.getElementById('spawnCustomBtn').addEventListener('click', () => {
+        if (!spawnPos) return;
+        const rings = cType.value === 'planet' && document.getElementById('cHasRings').checked ? {
+            inner: parseFloat(document.getElementById('cRingInner').value),
+            outer: parseFloat(document.getElementById('cRingOuter').value),
+            color: document.getElementById('cRingColor').value
+        } : null;
+
+        spawnObject(spawnPos.x, spawnPos.y, {
+            mass: parseFloat(document.getElementById('cMass').value),
+            vx: 0, vy: 0,
+            type: cType.value,
+            color: document.getElementById('cColor').value,
+            rings
+        });
+        customPanel.style.display = 'none';
+        spawnPos = null;
+    });
+
+    document.getElementById('cancelCustomBtn').addEventListener('click', () => {
+        customPanel.style.display = 'none';
+        spawnPos = null;
+    });
+
+    document.querySelectorAll('.tool-header').forEach(h => {
+        h.addEventListener('dragstart', e => {
+            draggedTool = h.parentElement;
+            e.dataTransfer.setData('text/plain', 'spawn');
+        });
+    });
+    canvas.addEventListener('dragover', e => e.preventDefault());
+    canvas.addEventListener('drop', e => {
+        e.preventDefault();
+        if (!draggedTool) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left - offsetX) / zoom;
+        const y = (e.clientY - rect.top - offsetY) / zoom;
+        spawnPos = { x, y };
+        document.getElementById('cType').value = draggedTool.dataset.type;
+        cType.dispatchEvent(new Event('change'));
+        customPanel.style.display = 'block';
+        draggedTool = null;
+    });
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = (e.clientX - rect.left - offsetX) / zoom;
+        mouse.y = (e.clientY - rect.top - offsetY) / zoom;
+    });
+
+    canvas.addEventListener('click', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left - offsetX) / zoom;
+        const my = (e.clientY - rect.top - offsetY) / zoom;
+
+        selected = null;
+        for (const obj of objects) {
+            if (Math.hypot(obj.x - mx, obj.y - my) < obj.radius + 15) {
+                selected = obj;
+                updatePanel();
+                if (e.shiftKey) {
+                    followTarget = obj;
+                    targetZoom = 3;
+                }
+                break;
+            }
+        }
+        document.getElementById('infoPanel').style.display = selected ? 'block' : 'none';
+    });
+
+    canvas.addEventListener('wheel', e => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        targetZoom = Math.max(0.05, Math.min(targetZoom * delta, 15));
+    });
+    canvas.addEventListener('mousedown', e => {
+        if (e.button === 0) {
+            isPanning = true;
+            panStart.x = e.clientX - offsetX;
+            panStart.y = e.clientY - offsetY;
+        }
+    });
+    canvas.addEventListener('mousemove', e => {
+        if (isPanning) {
+            offsetX = e.clientX - panStart.x;
+            offsetY = e.clientY - panStart.y;
+        }
+    });
+    ['mouseup', 'mouseleave'].forEach(ev => canvas.addEventListener(ev, () => isPanning = false));
+
+    function applySlingshot(a, b) {
+        if (a.frozen || b.frozen || a.mass > b.mass * 1.2) return;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy);
+        const r = a.radius + b.radius * 3.5;
+        if (dist < r && dist > a.radius + b.radius) {
+            const boost = (b.mass / a.mass) * (1 - dist / r) * 8;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            a.vx += nx * boost;
+            a.vy += ny * boost;
+            createExplosion(a.x, a.y, a.color, 25, 2);
+            play(sfx.slingshot);
+        }
+    }
+
+    function createExplosion(x, y, color, count = 50, size = 2) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 12 + 6;
+            particles.push(new Particle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                color,
+                50 + Math.random() * 50,
+                size
+            ));
+        }
+        play(sfx.explosion);
+    }
+
+    function handleSpecialCollision(a, b) {
+        if (a.type === 'blackhole') {
+            const small = b;
+            createExplosion(small.x, small.y, small.color, 50, 3);
+            a.mass += small.mass * 0.8;
+            a.radius = Math.pow(a.mass, 0.4) * 3;
+            const idx = objects.indexOf(small);
+            if (idx > -1) objects.splice(idx, 1);
+            play(sfx.blackhole);
+            return true;
+        }
+        if (b.type === 'blackhole') {
+            return handleSpecialCollision(b, a);
+        }
+        return false;
+    }
+
+    function simulate() {
+        if (paused) return;
+        DT = 0.016 * simSpeed;
+
+        if (followTarget) {
+            const targetX = width / 2 - followTarget.x * targetZoom;
+            const targetY = height / 2 - followTarget.y * targetZoom;
+            offsetX += (targetX - offsetX) * 0.1;
+            offsetY += (targetY - offsetY) * 0.1;
+            zoom += (targetZoom - zoom) * 0.1;
+        } else {
+            zoom += (targetZoom - zoom) * 0.1;
+        }
+
+        const newObjects = [];
+        objects.forEach((a, i) => {
+            if (a.frozen) {
+                newObjects.push(a);
+                return;
+            }
+
+            let ax = 0, ay = 0;
+
+            for (let j = 0; j < objects.length; j++) {
+                if (i === j) continue;
+                const b = objects[j];
+                if (b.frozen) continue;
+
+                applySlingshot(a, b);
+
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const distSq = dx * dx + dy * dy + 1;
+                const dist = Math.sqrt(distSq);
+
+                if (dist < a.radius + b.radius) {
+                    if (handleSpecialCollision(a, b)) continue;
+
+                    const winner = a.mass >= b.mass ? a : b;
+                    const loser = a.mass >= b.mass ? b : a;
+
+                    const momentumFactor = loser.mass / (winner.mass + loser.mass);
+                    winner.vx += (loser.vx - winner.vx) * momentumFactor * 0.3;
+                    winner.vy += (loser.vy - winner.vy) * momentumFactor * 0.3;
+
+                    winner.mass += loser.mass * 0.7;
+                    winner.radius = Math.pow(winner.mass, 0.4) * 3;
+                    createExplosion(loser.x, loser.y, loser.color, 40);
+                    play(sfx.collide);
+                    loser.toRemove = true;
+                }
+
+                const force = G * a.mass * b.mass / distSq;
+                ax += force * dx / dist / a.mass;
+                ay += force * dy / dist / a.mass;
+            }
+
+            a.vx += ax * DT;
+            a.vy += ay * DT;
+            a.x += a.vx * DT;
+            a.y += a.vy * DT;
+            a.updateTrail();
+            a.updateCometTail();
+            a.predictOrbit();
+
+            if (!a.toRemove) newObjects.push(a);
+        });
+
+        objects.length = 0;
+        newObjects.forEach(o => objects.push(o));
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            if (particles[i].life <= 0) particles.splice(i, 1);
+        }
+
+        if (selected) updateLiveStats();
+    }
+
+    function updatePanel() {
+        if (!selected) return;
+        document.getElementById('objName').textContent = selected.type.charAt(0).toUpperCase() + selected.type.slice(1);
+        document.getElementById('massInput').value = selected.mass;
+        document.getElementById('velXInput').value = selected.vx.toFixed(2);
+        document.getElementById('velYInput').value = selected.vy.toFixed(2);
+        document.getElementById('freezeBtn').textContent = selected.frozen ? 'Unfreeze' : 'Freeze';
+        updateLiveStats();
+    }
+
+    function updateLiveStats() {
+        if (!selected) return;
+        const speed = Math.hypot(selected.vx, selected.vy);
+        document.getElementById('speedDisplay').textContent = speed.toFixed(2);
+        const center = objects.find(o => o.type === 'star' || o.type === 'redgiant') || objects[0];
+        if (center) {
+            const dist = Math.hypot(selected.x - center.x, selected.y - center.y);
+            document.getElementById('distDisplay').textContent = dist.toFixed(1);
+        }
+    }
+
+    ['massInput','velXInput','velYInput'].forEach(id => {
+        document.getElementById(id).addEventListener('input', e => {
+            if (!selected) return;
+            const val = parseFloat(e.target.value) || 0;
+            if (id === 'massInput') {
+                selected.mass = Math.max(1, val);
+                selected.radius = Math.pow(selected.mass, 0.4) * 3;
+            } else if (id === 'velXInput') selected.vx = val;
+            else if (id === 'velYInput') selected.vy = val;
+            selected.predictOrbit();
+        });
+    });
+
+    document.getElementById('deleteBtn').addEventListener('click', () => {
+        if (selected) {
+            const idx = objects.indexOf(selected);
+            if (idx > -1) objects.splice(idx, 1);
+            selected = null; followTarget = null;
+            document.getElementById('infoPanel').style.display = 'none';
+        }
+    });
+
+    document.getElementById('freezeBtn').addEventListener('click', () => {
+        if (selected) {
+            selected.frozen = !selected.frozen;
+            updatePanel();
+        }
+    });
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            simSpeed = parseFloat(btn.dataset.speed);
+        });
+    });
+
+    document.getElementById('orbitsBtn').addEventListener('click', e => {
+        showOrbits = !showOrbits;
+        e.target.classList.toggle('active');
+    });
+
+    document.getElementById('trailsBtn').addEventListener('click', e => {
+        showTrails = !showTrails;
+        e.target.classList.toggle('active');
+        if (!showTrails) objects.forEach(o => o.trail = []);
+    });
+
+    document.getElementById('soundBtn').addEventListener('click', e => {
+        soundEnabled = !soundEnabled;
+        e.target.classList.toggle('active');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+        paused = !paused;
+        document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+    });
+
+    document.addEventListener('keydown', e => {
+        const step = 100;
+        switch (e.key) {
+            case ' ': e.preventDefault(); document.getElementById('pauseBtn').click(); break;
+            case 'ArrowUp': offsetY += step; break;
+            case 'ArrowDown': offsetY -= step; break;
+            case 'ArrowLeft': offsetX += step; break;
+            case 'ArrowRight': offsetX -= step; break;
+            case '+': case '=': targetZoom = Math.min(targetZoom * 1.2, 15); break;
+            case '-': targetZoom = Math.max(targetZoom * 0.8, 0.05); break;
+            case 'r': case 'R': offsetX = offsetY = 0; targetZoom = 1; followTarget = null; break;
+            case 'Delete':
+                if (selected) {
+                    const idx = objects.indexOf(selected);
+                    if (idx > -1) objects.splice(idx, 1);
+                    selected = null; followTarget = null;
+                    document.getElementById('infoPanel').style.display = 'none';
+                }
+                break;
+        }
+    });
+
+    function render() {
+        ctx.fillStyle = '#000008';
+        ctx.fillRect(0, 0, width, height);
+        objects.forEach(obj => obj.draw());
+        pCtx.clearRect(0, 0, width, height);
+        particles.forEach(p => p.draw());
+        pCtx.globalAlpha = 1;
+        requestAnimationFrame(render);
+    }
+
+    function loop() {
+        simulate();
+        requestAnimationFrame(loop);
+    }
+
+    render();
+    loop();
+</script>
+</body>
+</html>

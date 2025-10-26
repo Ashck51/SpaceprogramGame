@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Information - Space Project Game</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1a1a3d 0%, #000 70%);
+            height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .info-container {
+            max-width: 800px;
+            padding: 2rem;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .info-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #00ccff, #ff00cc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px rgba(0, 200, 255, 0.5);
+        }
+
+        .info-text {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            margin: 1.5rem 0;
+            color: #ddd;
+            text-shadow: 0 0 10px rgba(0,0,0,.5);
+        }
+
+        .highlight {
+            color: #00ffcc;
+            font-weight: 600;
+            text-shadow: 0 0 15px rgba(0,255,200,.6);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all .4s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,.4);
+            border-color: rgba(0,255,200,.5);
+        }
+        .feature-card h3 {
+            margin: 0 0 .5rem;
+            color: #00ffcc;
+            font-size: 1.4rem;
+        }
+
+        .back-btn {
+            margin-top: 3rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 50px;
+            background: rgba(255,255,255,.07);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,.37);
+            cursor: pointer;
+            transition: all .4s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: .8rem;
+        }
+        .back-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,.5);
+            background: rgba(255,255,255,.15);
+        }
+        .back-btn .icon {
+            width: 1.4rem; height: 1.4rem;
+            background: currentColor;
+            mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>') center/contain no-repeat;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-wrapper slide-in" id="pageWrapper">
+        <div class="info-container">
+            <h1 class="info-title">About the Game</h1>
+            
+            <p class="info-text">
+                Welcome to <span class="highlight">Space Project Game</span> — a <strong>web-based 2D physics sandbox</strong> where you become the architect of the cosmos.
+            </p>
+
+            <p class="info-text">
+                Place planets, stars, asteroids, and even <span class="highlight">black holes</span>. Watch as gravity pulls, objects collide, and orbits form in real time.
+            </p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Physics Engine</h3>
+                    <p>Realistic gravity, momentum, and collisions</p>
+                    </div>
+                <div class="feature-card">
+                    <h3>Black Holes</h3>
+                    <p>Event horizons, accretion disks, spaghettification</p>
+                    </div>
+                <div class="feature-card">
+                    <h3>Custom Objects</h3>
+                    <p>Drag, scale, rotate, and launch anything</p>
+                    </div>
+                <div class="feature-card">
+                    <h3>Time Control</h3>
+                    <p>Speed up, slow down, or pause the universe</p>
+                    </div>
+            </div>
+
+            <p class="info-text">
+                Built with <span class="highlight">HTML5, Canvas, and JavaScript</span> — no downloads, no plugins. Just pure browser-based cosmic creation.
+            </p>
+
+            <a href="index.html" class="back-btn space-btn">
+                <span class="icon"></span><span>Back to Menu</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        setTimeout(() => {
+            document.getElementById('pageWrapper').classList.add('active');
+        }, 50);
+
+        document.querySelector('.back-btn').addEventListener('click', e => {
+            e.preventDefault();
+            const wrapper = document.getElementById('pageWrapper');
+            wrapper.classList.remove('active');
+            wrapper.classList.add('slide-out');
+            setTimeout(() => location.href = 'index.html', 600);
+        });
+    </script>
+</body>
+</html>

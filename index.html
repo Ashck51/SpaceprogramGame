@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Project Game</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* ────────────────────── Base Layout ────────────────────── */
+        body{
+            margin:0;overflow:hidden;
+            background:radial-gradient(circle at center,#1a1a3d 0%,#000 70%);
+            height:100vh;font-family:'Segoe UI',Arial,sans-serif;
+            position:relative;color:#fff;
+        }
+        canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;}
+
+        /* ────────────────────── Nebula ────────────────────── */
+        .nebula{
+            position:absolute;width:100%;height:100%;
+            background:radial-gradient(circle at 30% 20%,rgba(100,50,150,.25),transparent 70%),
+                       radial-gradient(circle at 70% 80%,rgba(50,100,150,.2),transparent 60%);
+            filter:blur(70px);opacity:.7;z-index:1;
+            animation:nebulaPulse 22s ease-in-out infinite;
+        }
+        @keyframes nebulaPulse{
+            0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.03)}
+        }
+
+        /* ────────────────────── Stars ────────────────────── */
+        .star{
+            position:absolute;background:white;border-radius:50%;
+            box-shadow:0 0 8px rgba(255,255,255,.9);
+            animation:twinkle 2s infinite alternate;z-index:3;
+            transition:box-shadow .3s ease;
+        }
+        @keyframes twinkle{0%{opacity:.4;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
+
+        /* ────────────────────── Title ────────────────────── */
+        .title{
+            position:absolute;top:15vh;left:50%;transform:translateX(-50%);
+            font-size:3.8rem;font-weight:800;letter-spacing:2px;
+            text-shadow:0 0 30px rgba(255,255,255,.7);z-index:10;
+            animation:titleGlow 3s ease-in-out infinite alternate;
+        }
+        @keyframes titleGlow{
+            0%{text-shadow:0 0 20px rgba(255,255,255,.6)}
+            100%{text-shadow:0 0 40px rgba(255,255,255,.9)}
+        }
+
+        /* ────────────────────── Buttons ────────────────────── */
+        .ui-container{
+            position:absolute;bottom:10vh;left:50%;transform:translateX(-50%);
+            display:flex;gap:2rem;z-index:10;
+        }
+        .space-btn{
+            position:relative;padding:1rem 2.2rem;font-size:1.1rem;font-weight:600;
+            color:#fff;text-transform:uppercase;letter-spacing:1.5px;
+            border:none;border-radius:50px;background:rgba(255,255,255,.07);
+            backdrop-filter:blur(12px);
+            box-shadow:0 8px 32px rgba(0,0,0,.37),inset 0 0 15px rgba(255,255,255,.1);
+            cursor:pointer;overflow:hidden;
+            transition:all .4s cubic-bezier(.23,1,.32,1);
+            display:flex;align-items:center;gap:.8rem;
+        }
+        .space-btn::before{
+            content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+            background:linear-gradient(135deg,rgba(255,255,255,.2)0%,rgba(255,255,255,0)50%);
+            transform:translateX(-100%);transition:transform .6s;
+        }
+        .space-btn:hover::before{transform:translateX(100%);}
+        .space-btn:hover{
+            transform:translateY(-4px);
+            box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 0 20px rgba(255,255,255,.15);
+        }
+        .space-btn:active{transform:translateY(-2px);}
+        .space-btn .icon{
+            width:1.4rem;height:1.4rem;background:currentColor;
+            mask-size:contain;mask-repeat:no-repeat;mask-position:center;
+            transition:transform .3s ease;
+        }
+        .space-btn:hover .icon{transform:scale(1.2);}
+        @keyframes btnPulse{
+            0%,100%{box-shadow:0 8px 32px rgba(0,0,0,.37),inset 0 0 15px rgba(255,255,255,.1)}
+            50%    {box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 0 20px rgba(255,255,255,.15)}
+        }
+        .space-btn{animation:btnPulse 4s ease-in-out infinite;}
+
+        /* Button colors */
+        #playBtn   {background:linear-gradient(135deg,rgba(0,204,153,.25),rgba(0,153,102,.15));border:1px solid rgba(0,204,153,.4);}
+        #infoBtn   {background:linear-gradient(135deg,rgba(0,153,255,.25),rgba(0,102,204,.15));border:1px solid rgba(0,153,255,.4);}
+        #creditsBtn{background:linear-gradient(135deg,rgba(255,153,0,.25),rgba(204,102,0,.15));border:1px solid rgba(255,153,0,.4);}
+
+        /* Icons */
+        #playBtn .icon   {mask-image:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>');}
+        #infoBtn .icon   {mask-image:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>');}
+        #creditsBtn .icon{mask-image:url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>');}
+
+        /* ────────────────────── Easter Egg ────────────────────── */
+        .easter-egg{
+            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            font-size:2.5rem;font-weight:bold;color:#0f0;
+            text-shadow:0 0 20px #0f0;
+            opacity:0;pointer-events:none;z-index:100;
+            display:none;                     /* hidden by default */
+            animation:eggPulse 1.5s infinite;
+        }
+        @keyframes eggPulse{
+            0%,100%{opacity:.8;transform:translate(-50%,-50%) scale(1)}
+            50%    {opacity:1;transform:translate(-50%,-50%) scale(1.1)}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-wrapper" id="pageWrapper">
+        <div class="nebula"></div>
+        <canvas id="spaceCanvas"></canvas>
+
+        <h1 class="title">Space Project Game</h1>
+
+        <div class="ui-container">
+            <button id="playBtn"    class="space-btn" data-href="play.html">   <span class="icon"></span><span>Play</span></button>
+            <button id="infoBtn"    class="space-btn" data-href="info.html">   <span class="icon"></span><span>Information</span></button>
+            <button id="creditsBtn" class="space-btn" data-href="credits.html"><span class="icon"></span><span>Credits</span></button>
+        </div>
+
+        <!-- Easter-egg message (hidden until code is entered) -->
+        <div class="easter-egg" id="easterEgg">KONAMI CODE ACTIVATED!</div>
+    </div>
+
+    <script>
+        /* ─────── Slide transition ─────── */
+        document.querySelectorAll('.space-btn').forEach(btn=>{
+            btn.addEventListener('click',e=>{
+                e.preventDefault();
+                const href = btn.dataset.href;
+                const wrapper = document.getElementById('pageWrapper');
+                wrapper.classList.add('slide-out');
+                setTimeout(()=>location.href=href,600);
+            });
+        });
+
+        /* ─────── Background (stars + comets) ─────── */
+        const canvas = document.getElementById('spaceCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = innerWidth; canvas.height = innerHeight;
+
+        // ---- Stars ----
+        const stars = [];
+        for(let i=0;i<180;i++){
+            const s=document.createElement('div');s.className='star';
+            const sz=Math.random()*3+1;
+            s.style.width=s.style.height=`${sz}px`;
+            s.style.left=`${Math.random()*100}vw`;
+            s.style.top=`${Math.random()*100}vh`;
+            s.style.animationDelay=`${Math.random()*2}s`;
+            s.depth = Math.random()*0.6+0.4;
+            s.baseX = parseFloat(s.style.left);
+            s.baseY = parseFloat(s.style.top);
+            stars.push(s); document.body.appendChild(s);
+        }
+
+        // ---- Comets ----
+        const comets = [];
+        class Comet{
+            constructor(){this.reset();this.trail=[];}
+            reset(){
+                this.x = Math.random()*canvas.width;
+                this.y = -10;
+                this.speedX = -Math.random()*3-2;
+                this.speedY = Math.random()*3+2;
+                this.size = Math.random()*3+3;
+                this.opacity = 1;
+                this.duration = Math.random()*4000+4000;
+                this.startTime = Date.now();
+                this.wave = Math.random()*50+50;
+                this.waveSpeed = Math.random()*0.02+0.01;
+                this.trailColor = Math.random()>0.5 ? 'rgba(255,204,0,0.8)' : 'rgba(100,150,255,0.8)';
+            }
+            update(){
+                const e = Date.now()-this.startTime;
+                const p = e/this.duration;
+                this.x += this.speedX + Math.sin(e*this.waveSpeed)*0.5;
+                this.y += this.speedY;
+                this.opacity = 1-p;
+                this.trail.push({x:this.x,y:this.y,opacity:this.opacity});
+                if(this.trail.length>25) this.trail.shift();
+                if(this.x<-50||this.y>canvas.height+50||p>=1){this.reset();this.trail=[];}
+            }
+            draw(){
+                ctx.beginPath(); ctx.strokeStyle=this.trailColor; ctx.lineWidth=this.size*0.8;
+                this.trail.forEach((pt,i)=>{
+                    const op = pt.opacity*(1-i/this.trail.length);
+                    ctx.strokeStyle = this.trailColor.replace('0.8',`${op*0.8}`);
+                    i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y);
+                });
+                ctx.stroke();
+                ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+                ctx.fillStyle=`rgba(255,255,255,${this.opacity})`;
+                ctx.shadowBlur=20; ctx.shadowColor=this.trailColor.includes('255,204,0')?'#ffcc00':'#6496ff';
+                ctx.fill(); ctx.shadowBlur=0;
+            }
+        }
+        for(let i=0;i<8;i++) comets.push(new Comet());
+
+        // ---- Mouse parallax ----
+        let mx=0,my=0;
+        document.addEventListener('mousemove',e=>{
+            mx=(e.clientX/innerWidth-0.5)*25;
+            my=(e.clientY/innerHeight-0.5)*25;
+            stars.forEach(s=>{
+                const sx=(s.baseX/100)*innerWidth, sy=(s.baseY/100)*innerHeight;
+                const d=Math.hypot(e.clientX-sx,e.clientY-sy);
+                s.style.boxShadow=d<100?`0 0 12px rgba(255,255,255,${1-d/100})`:'0 0 8px rgba(255,255,255,0.9)';
+            });
+        });
+        function updateStars(){
+            stars.forEach(s=>{
+                const ox=-mx*s.depth, oy=-my*s.depth;
+                s.style.left=`${s.baseX+ox}vw`;
+                s.style.top=`${s.baseY+oy}vh`;
+            });
+        }
+
+        function animate(){
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            comets.forEach(c=>{c.update();c.draw();});
+            updateStars();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        window.addEventListener('resize',()=>{
+            canvas.width=innerWidth; canvas.height=innerHeight;
+            comets.forEach(c=>c.reset());
+        });
+
+        /* ─────── Easter Egg: Konami Code ─────── */
+        let code = '';
+        const target = 'ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRightba';
+        document.addEventListener('keydown', e=>{
+            code += e.key.toLowerCase();
+            if(code.length>target.length) code = code.slice(-target.length);
+            if(code===target){
+                const egg = document.getElementById('easterEgg');
+                egg.style.display = 'block';          // show
+                setTimeout(()=>egg.style.display='none',3000); // hide after 3s
+                code = '';
+            }
+        });
+    </script>
+</body>
+</html>

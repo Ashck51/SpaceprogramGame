@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credits - Space Project Game</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1a1a3d 0%, #000 70%);
+            height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .credits-container {
+            text-align: center;
+            z-index: 10;
+            padding: 2rem;
+        }
+
+        .credits-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #00ffcc, #00aaff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 200, 0.4);
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        .creator-name {
+            font-size: 4.5rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            margin: 2rem 0;
+            color: #fff;
+            text-shadow: 
+                0 0 20px rgba(255,255,255,.8),
+                0 0 40px rgba(0,255,200,.6),
+                0 0 60px rgba(0,170,255,.4);
+            animation: namePulse 2.5s ease-in-out infinite;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: #aaa;
+            margin-top: 1rem;
+            letter-spacing: 1.5px;
+            opacity: 0.9;
+        }
+
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 20px rgba(0,255,200,.4); }
+            100% { text-shadow: 0 0 50px rgba(0,255,200,.7); }
+        }
+
+        @keyframes namePulse {
+            0%, 100% { 
+                text-shadow: 
+                    0 0 20px rgba(255,255,255,.8),
+                    0 0 40px rgba(0,255,200,.6),
+                    0 0 60px rgba(0,170,255,.4);
+            }
+            50% { 
+                text-shadow: 
+                    0 0 30px rgba(255,255,255,1),
+                    0 0 60px rgba(0,255,200,.9),
+                    0 0 90px rgba(0,170,255,.7);
+            }
+        }
+
+        /* Back Button */
+        .back-btn {
+            margin-top: 4rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 50px;
+            background: rgba(255,255,255,.07);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0,0,0,.37);
+            cursor: pointer;
+            transition: all .4s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: .8rem;
+        }
+        .back-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,.5);
+            background: rgba(255,255,255,.15);
+        }
+        .back-btn .icon {
+            width: 1.4rem; height: 1.4rem;
+            background: currentColor;
+            mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>') center/contain no-repeat;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-wrapper slide-in" id="pageWrapper">
+        <div class="credits-container">
+            <h1 class="credits-title">Created By</h1>
+            <div class="creator-name">Alexander Lavilletta</div>
+            <p class="subtitle">Vision • Code • Cosmos</p>
+            <a href="index.html" class="back-btn space-btn">
+                <span class="icon"></span><span>Back to Menu</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Slide-in on load
+        setTimeout(() => {
+            document.getElementById('pageWrapper').classList.add('active');
+        }, 50);
+
+        // Back button with slide-out
+        document.querySelector('.back-btn').addEventListener('click', e => {
+            e.preventDefault();
+            const wrapper = document.getElementById('pageWrapper');
+            wrapper.classList.remove('active');
+            wrapper.classList.add('slide-out');
+            setTimeout(() => location.href = 'index.html', 600);
+        });
+    </script>
+</body>
+</html>
